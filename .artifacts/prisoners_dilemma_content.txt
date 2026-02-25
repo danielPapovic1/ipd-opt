@@ -1,0 +1,255 @@
+PRISONERS' DILEMMA PROJECT - COMPLETE CONTENT
+==============================================
+
+SLIDE 1: Prisoners' Dilemma: The Story
+---------------------------------------
+Invented by Merrill Flood & Melvin Dresher in 1950s
+Studied in game theory, economics, political science
+Two criminals have been caught
+They cannot communicate with each other
+If both confess, they will each get 10 years
+If one confesses and accuses other:
+- confessor goes free
+- accused gets 20 years
+If neither confesses, they will both get 1 year on a lesser charge
+
+
+SLIDE 2: Prisoners' Dilemma Payoff Matrix
+------------------------------------------
+defect = confess, cooperate = don't
+payoffs < 0 because punishments (losses)
+
+               | Bob: cooperate | Bob: defect
+---------------|----------------|-------------
+Ann: cooperate |     -1, -1     |    -20, 0
+Ann: defect    |      0, -20    |    -10, -10
+
+
+SLIDE 3: Ann's "Rational" Analysis (Dominant Strategy)
+-------------------------------------------------------
+if cooperates, may get 20 years
+if defects, may get 10 years
+Therefore, best to defect
+
+(Same payoff matrix as Slide 2)
+
+
+SLIDE 4: Bob's "Rational" Analysis (Dominant Strategy)
+-------------------------------------------------------
+if he cooperates, may get 20 years
+if he defects, may get 10 years
+Therefore, best to defect
+
+(Same payoff matrix as Slide 2)
+
+
+SLIDE 5: Suboptimal Result of "Rational" Analysis
+--------------------------------------------------
+each acts individually rationally -> get 10 years (dominant strategy equilibrium)
+"irrationally" decide to cooperate -> only 1 year
+
+(Same payoff matrix as Slide 2)
+
+
+SLIDE 6: Summary
+----------------
+Individually rational actions lead to a result that all agree is less desirable
+In such a situation you cannot act unilaterally in your own best interest
+Just one example of a (game-theoretic) dilemma
+Can there be a situation in which it would make sense to cooperate unilaterally?
+Yes, if the players can expect to interact again in the future
+
+
+SLIDE 7: The Iterated Prisoners' Dilemma and Robert Axelrod's Experiments
+--------------------------------------------------------------------------
+
+
+SLIDE 8: Iterated Game
+-----------------------
+In simulation, the endpoint of the game is unknown to the players, making it essentially an infinitely iterated game
+Each player has a memory of the previous three (or more) rounds on which to base his strategy
+Strategies are deterministic - for a given history h players will always make the same move
+With 4 possible configurations in each round and a history of 3, each strategy is comprised of 4^3 = 64 moves
+
+
+SLIDE 9: Axelrod's Experiments (1984)
+--------------------------------------
+Intuitively, expectation of future encounters may affect rationality of defection
+Various programs compete for 200 rounds
+- encounters each other and self
+Each program can remember:
+- its own past actions
+- its competitors' past actions
+14 programs submitted for first experiment
+
+
+SLIDE 10: IPD Payoff Matrix
+----------------------------
+               | B: cooperate | B: defect
+---------------|--------------|----------
+A: cooperate   |    3, 3      |   0, 5
+A: defect      |    5, 0      |   1, 1
+
+
+SLIDE 11: Indefinite Number of Future Encounters
+-------------------------------------------------
+Cooperation depends on expectation of indefinite number of future encounters
+Suppose a known finite number of encounters:
+- No reason to C on last encounter
+- Since expect D on last, no reason to C on next to last
+- And so forth: there is no reason to C at all
+
+
+SLIDE 12: Analysis of Some Simple Strategies
+---------------------------------------------
+Three simple strategies:
+- ALL-D: always defect
+- ALL-C: always cooperate
+- RAND: randomly cooperate/defect
+
+Effectiveness depends on environment
+- ALL-D optimizes local (individual) fitness
+- ALL-C optimizes global (population) fitness
+- RAND compromises
+
+
+SLIDE 13: Expected Scores
+--------------------------
+Playing ->     | ALL-C | RAND | ALL-D | Average
+---------------|-------|------|-------|--------
+ALL-C          |  3.0  | 1.5  |  0.0  |   1.5
+RAND           |  4.0  | 2.25 |  0.5  |   2.25
+ALL-D          |  5.0  | 3.0  |  1.0  |   3.0
+
+
+SLIDE 14: Result of Axelrod's Experiments
+------------------------------------------
+Winner is Rapoport's TFT (Tit-for-Tat)
+- cooperate on first encounter
+- reply in kind on succeeding encounters
+
+Second experiment:
+- 62 programs
+- all known TFT was previous winner
+- TFT wins again
+
+
+SLIDE 15: Expected Scores
+--------------------------
+Playing ->     | ALL-C | RAND | ALL-D |  TFT   | Average
+---------------|-------|------|-------|--------|----------
+ALL-C          |  3.0  | 1.5  |  0.0  |  3.0   |  1.875
+RAND           |  4.0  | 2.25 |  0.5  |  2.25  |  2.25
+ALL-D          |  5.0  | 3.0  |  1.0  | 1+4/N  |  2.5+
+TFT            |  3.0  | 2.25 | 1-1/N |  3.0   |  2.3125-
+
+N = #encounters
+
+
+SLIDE 16: The Genetic Algorithm - The Model
+--------------------------------------------
+Darwinian Survival of the Fittest
+Genetic representation of entities
+Fitness function
+Select most fit individuals to reproduce
+Mutate
+Traits of most fit will be passed on
+Over time, the population will evolve to be more fit, optimal
+
+
+SLIDE 17: GA's and the Prisoner's Dilemma
+------------------------------------------
+Population: 100 individuals
+Chromosome: 64-bit string representing a strategy
+A bit: a choice between the Cooperate or Defect move played for a specific configuration of past moves
+
+Individuals = strategies
+How to encode a strategy by a string?
+
+Let memory depth of previous moves = 1
+Fix a canonical order of cases:
+- Case 0: C C (A cooperated, B cooperated)
+- Case 1: D C (A defected, B cooperated)  
+- Case 2: C D (A cooperated, B defected)
+- Case 3: D D (A defected, B defected)
+
+2^4 = 16 possible strategies for A
+
+e.g. strategy encoding (for A): 'CDCD'
+
+One strategy, then 2^64 strategies are possible in total
+
+
+SLIDE 18: GA's and PD (continued)
+----------------------------------
+Fitness: Each player competes against every other for 100 consecutive rounds, and a cumulative score is maintained
+Selection: Roulette Wheel selection
+Reproduction: Random point crossover with replacement
+Mutation rate: 0.001
+Generations: 1,000 generations
+
+
+SLIDE 19: Tit for Tat (TFT)
+----------------------------
+The action chosen is based on the opponent's last move.
+On the first turn, the previous move cannot be known, so always cooperate on the first move.
+Thereafter, always choose the opponent's last move as your next move.
+
+Key Points of Tit for Tat:
+- Nice: it cooperates on the first move.
+- Regulatory: it punishes defection with defection.
+- Forgiving: it continues cooperation after cooperation by the opponent.
+- Clear: it is easy for opponent to guess the next move, so mutual benefit is easier to attain.
+
+
+SLIDE 20: Tit for Two Tat (TF2T)
+---------------------------------
+Same as Tit for Tat, but requires two consecutive defections for a defection to be returned.
+Cooperate on the first two moves.
+If the opponent defects twice in a row, choose defection as the next move.
+
+Key Points of Tit for Two Tat:
+When defection is the opponent's first move, this strategy outperforms Tit for Tat.
+Cooperating after the first defection causes the opponent to cooperate also. Thus, in the long run, both players benefit more points.
+
+
+SLIDE 21: Suspicious Tit for Tat (STFT)
+----------------------------------------
+Always defect on the first move.
+Thereafter, replicate opponent's last move.
+
+Key Points of Suspicious Tit for Tat:
+If the opponent's first move is defection, this strategy outperforms Tit for Tat.
+However, it is generally worse than Tit for Tat.
+The first move is inconsequential compared to getting stuck in an infinite defection loop.
+
+
+SLIDE 22: Free Rider (ALLD)
+----------------------------
+Always choose to defect no matter what the opponent's last turn was.
+
+This is a dominant strategy against an opponent that has a tendency to cooperate.
+
+
+SLIDE 23: Always Cooperate (ALLC)
+----------------------------------
+Always choose to cooperate no matter what the opponent's last turn was.
+
+This strategy can be terribly abused by the Free Rider Strategy.
+Or even a strategy that tends towards defection.
+
+
+SLIDE 24: PROJECT REQUIREMENTS
+-------------------------------
+Use and compare different optimization methods (GA, EDA, hill climbing, tabu search...) to find the best possible strategies.
+Try different parameters of the optimization methods (like population size or mutation probability for GA)
+Try different memory depth: 3, 4, 5...
+Try to compete against human designed strategies.
+Compare the obtained strategies with TFT, TF2T or STFT
+
+Use machine learning to try to predict if a strategy will be good or not. How to build the train set? What size? How to evaluate?
+Compare different machine learning method.
+Can you extract some patterns or some rules from the good strategies?
+
+
+END OF DOCUMENT

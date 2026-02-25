@@ -1,0 +1,11 @@
+train_size,model,accuracy,precision,recall,f1
+200,RandomForest,1.0,1.0,1.0,1.0
+200,LogisticRegression,0.825,0.625,0.5555555555555556,0.5882352941176471
+200,SVM,1.0,1.0,1.0,1.0
+200,NeuralNetwork,1.0,1.0,1.0,1.0
+200,GradientBoosting,1.0,1.0,1.0,1.0
+500,RandomForest,1.0,1.0,1.0,1.0
+500,LogisticRegression,0.78,0.45454545454545453,0.23809523809523808,0.3125
+500,SVM,1.0,1.0,1.0,1.0
+500,NeuralNetwork,1.0,1.0,1.0,1.0
+500,GradientBoosting,1.0,1.0,1.0,1.0

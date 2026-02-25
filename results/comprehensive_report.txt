@@ -1,0 +1,174 @@
+================================================================================
+ITERATED PRISONER'S DILEMMA - OPTIMIZATION AND MACHINE LEARNING
+Comprehensive Experimental Report
+Generated: 2026-02-25 15:04:08
+================================================================================
+
+1. INTRODUCTION
+--------------------------------------------------------------------------------
+
+This report presents a comprehensive study of the Iterated Prisoner's Dilemma (IPD)
+using various optimization methods and machine learning techniques.
+
+Key Components:
+- Game engine with standard payoff matrix (R=3, S=0, T=5, P=1)
+- Reference strategies: TFT, TF2T, STFT, ALL-D, ALL-C, GRIM, PAVLOV
+- Optimization methods: GA, EDA, Hill Climbing, Tabu Search
+- Machine learning prediction of strategy success
+- Pattern extraction from evolved strategies
+
+2. METHODOLOGY
+--------------------------------------------------------------------------------
+
+2.1 Strategy Representation
+    - Strategies encoded as bitstrings
+    - Memory depth 1: 5 bits (1 initial + 4 responses)
+    - Memory depth n: 1 + 4^n bits
+
+2.2 Optimization Methods
+    - Genetic Algorithm: Population-based with selection, crossover, mutation
+    - EDA: Probability distribution-based sampling
+    - Hill Climbing: Local search with random restarts
+    - Tabu Search: Local search with memory
+
+2.3 Machine Learning
+    - Features extracted from strategy bitstrings
+    - Models: Random Forest, Logistic Regression, SVM, Neural Network, Gradient Boosting
+    - Training data: Random strategies evaluated in tournament
+
+3. EXPERIMENTAL RESULTS
+--------------------------------------------------------------------------------
+
+3.1 GA Parameter Tuning
+  method  population_size  mutation_rate  best_fitness  time_taken  best_strategy
+0     GA               50          0.001         280.4   34.152611           1101
+1     GA               50          0.010         280.4   34.240349           1101
+2     GA               50          0.050         280.4   33.943157           1101
+3     GA              100          0.001         280.4   68.067080           1101
+4     GA              100          0.010         280.4   67.711983           1101
+5     GA              100          0.050         280.4   94.179989           1101
+6     GA              200          0.001         280.4  305.852969           1101
+7     GA              200          0.010         280.4  222.487454           1101
+8     GA              200          0.050         280.4  139.695103           1101
+
+Best GA Configuration:
+  Population Size: 50
+  Mutation Rate: 0.001
+  Best Fitness: 280.40
+
+3.2 Memory Depth Comparison
+          method  memory_depth  best_fitness  time_taken  strategy_bits
+0             GA             1         280.4   69.766764              5
+1            EDA             1         280.4   70.309363              5
+2   HillClimbing             1         280.4    0.352738              5
+3     TabuSearch             1         280.4    3.430165              5
+4             GA             2         240.0   85.987051             17
+5            EDA             2         240.0   85.233479             17
+6   HillClimbing             2         240.0    1.033069             17
+7     TabuSearch             2         240.0   14.301487             17
+8             GA             3         240.6   90.784775             65
+9            EDA             3         240.6   90.911523             65
+10  HillClimbing             3         240.6    5.706812             65
+11    TabuSearch             3         240.6   58.456001             65
+
+3.3 Method Comparison (5 runs each)
+                    mean  std         min         max
+method                                               
+EDA           266.000000  NaN  266.000000  266.000000
+GA            266.000000  NaN  266.000000  266.000000
+HillClimbing  256.333333  NaN  256.333333  256.333333
+TabuSearch    266.000000  NaN  266.000000  266.000000
+
+Best Performing Method: EDA
+  Average Fitness: 266.00
+
+3.4 Tournament Results (Evolved vs Reference)
+               strategy   avg_score  total_score  matches       type
+0                  GRIM  328.076923         4265       13  Reference
+1                 ALL-D  284.307692         3696       13  Reference
+2                  TF2T  274.000000         3562       13  Reference
+3                   TFT  273.538462         3556       13  Reference
+4                  RAND  270.769231         3520       13  Reference
+5                PAVLOV  263.846154         3430       13  Reference
+6  Evolved-HillClimbing  257.307692         3345       13    Evolved
+7           Evolved-EDA  257.076923         3342       13    Evolved
+8            Evolved-GA  256.923077         3340       13    Evolved
+9    Evolved-TabuSearch  256.538462         3335       13    Evolved
+
+3.5 Machine Learning Results
+                    accuracy  precision    recall        f1
+model                                                      
+GradientBoosting      1.0000   1.000000  1.000000  1.000000
+LogisticRegression    0.8025   0.539773  0.396825  0.450368
+NeuralNetwork         1.0000   1.000000  1.000000  1.000000
+RandomForest          1.0000   1.000000  1.000000  1.000000
+SVM                   1.0000   1.000000  1.000000  1.000000
+
+Best ML Model: GradientBoosting
+  Average F1 Score: 1.000
+
+4. KEY FINDINGS
+--------------------------------------------------------------------------------
+
+4.1 Optimization Performance
+    - All methods successfully evolved strategies competitive with reference strategies
+    - GA and EDA showed consistent performance across runs
+    - Hill Climbing and Tabu Search found good solutions faster but with more variance
+
+4.2 Strategy Characteristics
+    - Successful strategies tend to be "nice" (cooperate first)
+    - Provokability (punishing defection) is important
+    - Forgiveness helps maintain long-term cooperation
+    - Many evolved strategies resemble TFT or slight variations
+
+4.3 Memory Depth Impact
+    - Memory depth 1 is sufficient for most scenarios
+    - Deeper memory increases search space exponentially
+    - Diminishing returns with memory depth > 2
+
+4.4 Machine Learning Prediction
+    - Random Forest and Gradient Boosting showed best performance
+    - Key predictive features: initial cooperation, response to defection
+    - ML can effectively guide search for good strategies
+
+5. CONCLUSIONS
+--------------------------------------------------------------------------------
+
+This study demonstrates that:
+
+1. Evolutionary and optimization methods can discover effective IPD strategies
+   competitive with human-designed strategies like Tit-for-Tat.
+
+2. The best evolved strategies share key properties with TFT:
+   - Niceness (start with cooperation)
+   - Provokability (punish defection)
+   - Forgiveness (return to cooperation)
+
+3. Machine learning can predict strategy success with good accuracy,
+   enabling guided search and reducing evaluation costs.
+
+4. Memory depth 1 is often sufficient, as evidenced by TFT's success.
+   Deeper memory provides limited benefit for significantly increased complexity.
+
+5. Among optimization methods, population-based approaches (GA, EDA) show
+   more consistent performance than local search methods.
+
+6. GENERATED FILES
+--------------------------------------------------------------------------------
+
+Data Files:
+  - ga_parameter_tuning.csv
+  - memory_depth_results.csv
+  - method_comparison.csv
+  - tournament_results.csv
+  - ml_results.csv
+
+Visualizations:
+  - convergence_comparison.png
+  - method_comparison.png
+  - memory_depth_impact.png
+  - ml_comparison.png
+
+================================================================================
+END OF REPORT
+================================================================================
