@@ -31,6 +31,7 @@ class OptimizationResult:
     time_taken: float
     parameters: Dict
     method: str
+    fitness_evaluations: int = 0
 
 
 class FitnessEvaluator:
@@ -46,11 +47,14 @@ class FitnessEvaluator:
         self.use_tournament_fitness = use_tournament_fitness
         self.variance_penalty = variance_penalty
         self.game = IPDGame()
+        self.evaluation_count = 0
+        self.match_count = 0
     
     def _pairwise_scores(self, strategy: Strategy, opponents: List[Strategy]) -> List[float]:
         scores = []
         for opponent in opponents:
             score, _, _ = self.game.play_match(strategy, opponent, self.num_rounds)
+            self.match_count += 1
             scores.append(score)
         return scores
     
@@ -62,6 +66,7 @@ class FitnessEvaluator:
         Returns average score (optionally tournament-based) with variance penalty.
         """
         opponents = opponents if opponents is not None else self.opponents
+        self.evaluation_count += 1
         scores = self._pairwise_scores(strategy, opponents)
         if not scores:
             return 0.0
@@ -279,7 +284,8 @@ class GeneticAlgorithm:
                 'memory_depth': self.memory_depth,
                 'generations': generations
             },
-            method='GA'
+            method='GA',
+            fitness_evaluations=self.evaluator.evaluation_count
         )
 
 
@@ -337,8 +343,9 @@ class EDA:
         
         new_vector /= len(selected)
         
-        # Smooth update
-        return (1 - self.learning_rate) * prob_vector + self.learning_rate * new_vector
+        # Smooth update with clipping to avoid premature 0/1 collapse
+        updated = (1 - self.learning_rate) * prob_vector + self.learning_rate * new_vector
+        return np.clip(updated, 0.01, 0.99)
     
     def evolve(self,
                opponent_strategies: List[Strategy],
@@ -413,7 +420,8 @@ class EDA:
                 'memory_depth': self.memory_depth,
                 'generations': generations
             },
-            method='EDA'
+            method='EDA',
+            fitness_evaluations=evaluator.evaluation_count
         )
 
 
@@ -521,7 +529,8 @@ class HillClimbing:
                 'restarts': self.restarts,
                 'memory_depth': self.memory_depth
             },
-            method='HillClimbing'
+            method='HillClimbing',
+            fitness_evaluations=evaluator.evaluation_count
         )
 
 
@@ -644,7 +653,8 @@ class TabuSearch:
                 'tabu_size': self.tabu_size,
                 'memory_depth': self.memory_depth
             },
-            method='TabuSearch'
+            method='TabuSearch',
+            fitness_evaluations=evaluator.evaluation_count
         )
 
 

@@ -68,12 +68,24 @@ python main.py --demo
 
 ### Full Experiment Suite
 ```bash
-python main.py --full
+# Fast reproducible profile (default)
+python main.py --full --full-profile fast --seed 42
+
+# Higher-fidelity profiles
+python main.py --full --full-profile balanced --seed 42
+python main.py --full --full-profile full --seed 42
 ```
+
 
 ### Generate Report from Existing Results
 ```bash
 python main.py --report
+```
+
+
+### Run Tests
+```bash
+pytest -q
 ```
 
 ### Run Individual Components

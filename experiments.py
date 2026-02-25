@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import json
 import time
 import random
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from dataclasses import asdict
 import pandas as pd
 import os
@@ -38,6 +38,9 @@ class ExperimentRunner:
     def run_parameter_tuning_ga(self, 
                                  opponents: List[Strategy],
                                  generations: int = 500,
+                                 population_sizes: Optional[List[int]] = None,
+                                 mutation_rates: Optional[List[float]] = None,
+                                 num_rounds: int = 100,
                                  use_tournament_fitness: bool = True,
                                  variance_penalty: float = 0.5,
                                  coevolution: bool = True,
@@ -48,8 +51,8 @@ class ExperimentRunner:
         """
         print("Running GA Parameter Tuning...")
         
-        population_sizes = [50, 100, 200]
-        mutation_rates = [0.001, 0.01, 0.05]
+        population_sizes = population_sizes or [50, 100, 200]
+        mutation_rates = mutation_rates or [0.001, 0.01, 0.05]
         
         results = []
         
@@ -61,7 +64,7 @@ class ExperimentRunner:
                     population_size=pop_size,
                     mutation_rate=mut_rate,
                     memory_depth=1,
-                    num_rounds=100,
+                    num_rounds=num_rounds,
                     use_tournament_fitness=use_tournament_fitness,
                     variance_penalty=variance_penalty,
                     coevolution=coevolution,
@@ -84,6 +87,11 @@ class ExperimentRunner:
     def run_memory_depth_experiment(self,
                                      opponents: List[Strategy],
                                      generations: int = 500,
+                                     memory_depths: Optional[List[int]] = None,
+                                     population_size: int = 100,
+                                     restarts: int = 10,
+                                     tabu_size: int = 10,
+                                     num_rounds: int = 100,
                                      use_tournament_fitness: bool = True,
                                      variance_penalty: float = 0.5) -> pd.DataFrame:
         """
@@ -92,14 +100,14 @@ class ExperimentRunner:
         print("Running Memory Depth Experiment...")
 
         # Include required depths 3, 4, 5 (and keep 1, 2 for baseline)
-        memory_depths = [1, 2, 3, 4, 5]
+        memory_depths = memory_depths or [1, 2, 3, 4, 5]
         results = []
         
         for depth in memory_depths:
             print(f"  Testing memory_depth={depth}")
             
             # GA
-            ga = GeneticAlgorithm(population_size=100, mutation_rate=0.01, 
+            ga = GeneticAlgorithm(population_size=population_size, mutation_rate=0.01, num_rounds=num_rounds, 
                                  memory_depth=depth,
                                  use_tournament_fitness=use_tournament_fitness,
                                  variance_penalty=variance_penalty,
@@ -115,7 +123,7 @@ class ExperimentRunner:
             })
             
             # EDA
-            eda = EDA(population_size=100, memory_depth=depth,
+            eda = EDA(population_size=population_size, memory_depth=depth, num_rounds=num_rounds,
                       use_tournament_fitness=use_tournament_fitness,
                       variance_penalty=variance_penalty,
                       coevolution=True,
@@ -130,7 +138,7 @@ class ExperimentRunner:
             })
             
             # Hill Climbing
-            hc = HillClimbing(max_iterations=generations, restarts=10, 
+            hc = HillClimbing(max_iterations=generations, restarts=restarts, num_rounds=num_rounds, 
                             memory_depth=depth,
                             use_tournament_fitness=use_tournament_fitness,
                             variance_penalty=variance_penalty)
@@ -144,7 +152,7 @@ class ExperimentRunner:
             })
             
             # Tabu Search
-            ts = TabuSearch(max_iterations=generations, tabu_size=10, 
+            ts = TabuSearch(max_iterations=generations, tabu_size=tabu_size, num_rounds=num_rounds, 
                           memory_depth=depth,
                           use_tournament_fitness=use_tournament_fitness,
                           variance_penalty=variance_penalty)
@@ -164,7 +172,10 @@ class ExperimentRunner:
                            generations: int = 1000,
                            n_runs: int = 5,
                            base_seed: int = 42,
-                           rounds_range: Tuple[int, int] = (80, 120),
+                           num_rounds: int = 100,
+                           population_size: int = 100,
+                           restarts: int = 10,
+                           tabu_size: int = 10,
                            use_tournament_fitness: bool = True,
                            variance_penalty: float = 0.5,
                            coevolution: bool = True,
@@ -182,16 +193,10 @@ class ExperimentRunner:
             random.seed(run_seed)
             np.random.seed(run_seed)
 
-            # Vary rounds per run to avoid identical fitness plateaus
-            if rounds_range:
-                num_rounds = random.randint(rounds_range[0], rounds_range[1])
-            else:
-                num_rounds = 100
-
             print(f"  Run {run + 1}/{n_runs}")
             
             # GA
-            ga = GeneticAlgorithm(population_size=100, mutation_rate=0.01, num_rounds=num_rounds,
+            ga = GeneticAlgorithm(population_size=population_size, mutation_rate=0.01, num_rounds=num_rounds,
                                   use_tournament_fitness=use_tournament_fitness,
                                   variance_penalty=variance_penalty,
                                   coevolution=coevolution,
@@ -202,11 +207,12 @@ class ExperimentRunner:
                 'method': 'GA',
                 'best_fitness': result_ga.best_fitness,
                 'time_taken': result_ga.time_taken,
-                'final_gen': len(result_ga.fitness_history)
+                'final_gen': len(result_ga.fitness_history),
+                'fitness_evaluations': result_ga.fitness_evaluations
             })
             
             # EDA
-            eda = EDA(population_size=100, num_rounds=num_rounds,
+            eda = EDA(population_size=population_size, num_rounds=num_rounds,
                       use_tournament_fitness=use_tournament_fitness,
                       variance_penalty=variance_penalty,
                       coevolution=coevolution,
@@ -217,11 +223,12 @@ class ExperimentRunner:
                 'method': 'EDA',
                 'best_fitness': result_eda.best_fitness,
                 'time_taken': result_eda.time_taken,
-                'final_gen': len(result_eda.fitness_history)
+                'final_gen': len(result_eda.fitness_history),
+                'fitness_evaluations': result_eda.fitness_evaluations
             })
             
             # Hill Climbing
-            hc = HillClimbing(max_iterations=generations, restarts=10, num_rounds=num_rounds,
+            hc = HillClimbing(max_iterations=generations, restarts=restarts, num_rounds=num_rounds,
                               use_tournament_fitness=use_tournament_fitness,
                               variance_penalty=variance_penalty)
             result_hc = hc.evolve(opponents)
@@ -230,11 +237,12 @@ class ExperimentRunner:
                 'method': 'HillClimbing',
                 'best_fitness': result_hc.best_fitness,
                 'time_taken': result_hc.time_taken,
-                'final_gen': len(result_hc.fitness_history)
+                'final_gen': len(result_hc.fitness_history),
+                'fitness_evaluations': result_hc.fitness_evaluations
             })
             
             # Tabu Search
-            ts = TabuSearch(max_iterations=generations, tabu_size=10, num_rounds=num_rounds,
+            ts = TabuSearch(max_iterations=generations, tabu_size=tabu_size, num_rounds=num_rounds,
                             use_tournament_fitness=use_tournament_fitness,
                             variance_penalty=variance_penalty)
             result_ts = ts.evolve(opponents)
@@ -243,7 +251,8 @@ class ExperimentRunner:
                 'method': 'TabuSearch',
                 'best_fitness': result_ts.best_fitness,
                 'time_taken': result_ts.time_taken,
-                'final_gen': len(result_ts.fitness_history)
+                'final_gen': len(result_ts.fitness_history),
+                'fitness_evaluations': result_ts.fitness_evaluations
             })
         
         return pd.DataFrame(results)
@@ -251,6 +260,10 @@ class ExperimentRunner:
     def evolved_vs_reference(self,
                             opponents: List[Strategy],
                             generations: int = 1000,
+                            population_size: int = 100,
+                            restarts: int = 10,
+                            tabu_size: int = 10,
+                            num_rounds: int = 100,
                             use_tournament_fitness: bool = True,
                             variance_penalty: float = 0.5,
                             coevolution: bool = True,
@@ -262,20 +275,20 @@ class ExperimentRunner:
         
         # Evolve strategies with each method
         methods = {
-            'GA': GeneticAlgorithm(population_size=100, mutation_rate=0.01,
+            'GA': GeneticAlgorithm(population_size=population_size, mutation_rate=0.01, num_rounds=num_rounds,
                                    use_tournament_fitness=use_tournament_fitness,
                                    variance_penalty=variance_penalty,
                                    coevolution=coevolution,
                                    coevolution_k=coevolution_k),
-            'EDA': EDA(population_size=100,
+            'EDA': EDA(population_size=population_size, num_rounds=num_rounds,
                        use_tournament_fitness=use_tournament_fitness,
                        variance_penalty=variance_penalty,
                        coevolution=coevolution,
                        coevolution_k=coevolution_k),
-            'HillClimbing': HillClimbing(max_iterations=generations, restarts=10,
+            'HillClimbing': HillClimbing(max_iterations=generations, restarts=restarts, num_rounds=num_rounds,
                                          use_tournament_fitness=use_tournament_fitness,
                                          variance_penalty=variance_penalty),
-            'TabuSearch': TabuSearch(max_iterations=generations, tabu_size=10,
+            'TabuSearch': TabuSearch(max_iterations=generations, tabu_size=tabu_size, num_rounds=num_rounds,
                                      use_tournament_fitness=use_tournament_fitness,
                                      variance_penalty=variance_penalty)
         }
@@ -308,7 +321,8 @@ class ExperimentRunner:
     
     def run_ml_experiments(self,
                           opponents: List[Strategy],
-                          train_sizes: List[int] = [100, 500, 1000, 2000]) -> pd.DataFrame:
+                          train_sizes: List[int] = [100, 500, 1000, 2000],
+                          num_rounds: int = 100) -> pd.DataFrame:
         """
         Test ML prediction with different training set sizes.
         """
@@ -322,7 +336,7 @@ class ExperimentRunner:
             X, y, feature_names, strategies, fitnesses = generate_training_data(
                 n_samples=size,
                 opponent_strategies=opponents,
-                num_rounds=100,
+                num_rounds=num_rounds,
                 memory_depth=1
             )
             
@@ -457,81 +471,166 @@ def create_visualizations(results_dict: Dict, output_dir: str = "."):
     print(f"Visualizations saved to {output_dir}/")
 
 
-def run_full_experiment_suite(output_dir: str = "results"):
-    """Run the complete experiment suite"""
+FULL_SUITE_PROFILES = {
+    'fast': {
+        'ga_generations': 20,
+        'ga_population_sizes': [20, 40],
+        'ga_mutation_rates': [0.005, 0.02],
+        'memory_generations': 15,
+        'memory_depths': [1, 2],
+        'method_generations': 20,
+        'method_runs': 1,
+        'evolved_generations': 30,
+        'ml_train_sizes': [80, 160],
+        'num_rounds': 40,
+        'population_size': 12,
+        'restarts': 2,
+        'tabu_size': 5,
+    },
+    'balanced': {
+        'ga_generations': 120,
+        'ga_population_sizes': [50, 100],
+        'ga_mutation_rates': [0.001, 0.01, 0.05],
+        'memory_generations': 120,
+        'memory_depths': [1, 2, 3, 4, 5],
+        'method_generations': 180,
+        'method_runs': 3,
+        'evolved_generations': 220,
+        'ml_train_sizes': [200, 500],
+        'num_rounds': 100,
+        'population_size': 60,
+        'restarts': 8,
+        'tabu_size': 10,
+    },
+    'full': {
+        'ga_generations': 300,
+        'ga_population_sizes': [50, 100, 200],
+        'ga_mutation_rates': [0.001, 0.01, 0.05],
+        'memory_generations': 300,
+        'memory_depths': [1, 2, 3, 4, 5],
+        'method_generations': 500,
+        'method_runs': 5,
+        'evolved_generations': 500,
+        'ml_train_sizes': [200, 500, 1000],
+        'num_rounds': 100,
+        'population_size': 60,
+        'restarts': 8,
+        'tabu_size': 10,
+    },
+}
+
+
+def run_full_experiment_suite(output_dir: str = "results", profile: str = 'fast', base_seed: int = 42):
+    """Run the complete experiment suite with selectable runtime profile."""
     os.makedirs(output_dir, exist_ok=True)
-    
+
+    if profile not in FULL_SUITE_PROFILES:
+        raise ValueError(f"Unknown profile '{profile}'. Choose from {list(FULL_SUITE_PROFILES)}")
+    cfg = FULL_SUITE_PROFILES[profile]
+
+    random.seed(base_seed)
+    np.random.seed(base_seed)
+
     print("=" * 70)
     print("IPD OPTIMIZATION - FULL EXPERIMENT SUITE")
     print("=" * 70)
-    
+    print(f"Profile: {profile}")
+    print(f"Base seed: {base_seed}")
+
     runner = ExperimentRunner(output_dir)
-    
+
     # Define opponents for evolution
-    # Expanded opponent set to reduce overfitting
     opponents = [TFT, ALLD, ALLC, TF2T, STFT, GRIM, PAVLOV]
-    
+
     all_results = {}
-    
+
     # 1. Parameter tuning for GA
     print("\n" + "=" * 70)
     print("EXPERIMENT 1: GA Parameter Tuning")
     print("=" * 70)
-    ga_params = runner.run_parameter_tuning_ga(opponents, generations=300)
+    ga_params = runner.run_parameter_tuning_ga(
+        opponents,
+        generations=cfg['ga_generations'],
+        population_sizes=cfg['ga_population_sizes'],
+        mutation_rates=cfg['ga_mutation_rates'],
+        num_rounds=cfg['num_rounds']
+    )
     print(ga_params.to_string())
     ga_params.to_csv(f"{output_dir}/ga_parameter_tuning.csv", index=False)
     all_results['ga_params'] = ga_params
-    
+
     # 2. Memory depth experiment
     print("\n" + "=" * 70)
     print("EXPERIMENT 2: Memory Depth Comparison")
     print("=" * 70)
-    memory_results = runner.run_memory_depth_experiment(opponents, generations=300)
+    memory_results = runner.run_memory_depth_experiment(
+        opponents,
+        generations=cfg['memory_generations'],
+        memory_depths=cfg['memory_depths'],
+        population_size=cfg['population_size'],
+        restarts=cfg['restarts'],
+        tabu_size=cfg['tabu_size'],
+        num_rounds=cfg['num_rounds']
+    )
     print(memory_results.to_string())
     memory_results.to_csv(f"{output_dir}/memory_depth_results.csv", index=False)
     all_results['memory_depth'] = memory_results
-    
+
     # 3. Method comparison
     print("\n" + "=" * 70)
-    print("EXPERIMENT 3: Method Comparison (5 runs)")
+    print(f"EXPERIMENT 3: Method Comparison ({cfg['method_runs']} runs)")
     print("=" * 70)
-    method_comparison = runner.compare_all_methods(opponents, generations=500, n_runs=5)
+    method_comparison = runner.compare_all_methods(
+        opponents,
+        generations=cfg['method_generations'],
+        n_runs=cfg['method_runs'],
+        base_seed=base_seed,
+        num_rounds=cfg['num_rounds']
+    )
     print(method_comparison.groupby('method').agg({
         'best_fitness': ['mean', 'std', 'min', 'max'],
-        'time_taken': ['mean', 'std']
+        'time_taken': ['mean', 'std'],
+        'fitness_evaluations': ['mean', 'max']
     }).to_string())
     method_comparison.to_csv(f"{output_dir}/method_comparison.csv", index=False)
     all_results['method_comparison'] = method_comparison
-    
+
     # 4. Evolved vs Reference
     print("\n" + "=" * 70)
     print("EXPERIMENT 4: Evolved vs Reference Strategies")
     print("=" * 70)
-    tournament_results = runner.evolved_vs_reference(opponents, generations=500)
+    tournament_results = runner.evolved_vs_reference(
+        opponents,
+        generations=cfg['evolved_generations'],
+        population_size=cfg['population_size'],
+        restarts=cfg['restarts'],
+        tabu_size=cfg['tabu_size'],
+        num_rounds=cfg['num_rounds']
+    )
     print(tournament_results.to_string())
     tournament_results.to_csv(f"{output_dir}/tournament_results.csv", index=False)
     all_results['tournament_results'] = tournament_results
-    
+
     # 5. ML experiments
     print("\n" + "=" * 70)
     print("EXPERIMENT 5: ML Prediction Experiments")
     print("=" * 70)
-    ml_results = runner.run_ml_experiments(opponents, train_sizes=[200, 500, 1000])
+    ml_results = runner.run_ml_experiments(opponents, train_sizes=cfg['ml_train_sizes'], num_rounds=cfg['num_rounds'])
     print(ml_results.to_string())
     ml_results.to_csv(f"{output_dir}/ml_results.csv", index=False)
     all_results['ml_results'] = ml_results
-    
+
     # Create visualizations
     print("\n" + "=" * 70)
     print("Creating Visualizations...")
     print("=" * 70)
     create_visualizations(all_results, output_dir)
-    
+
     print("\n" + "=" * 70)
     print("ALL EXPERIMENTS COMPLETE!")
     print("=" * 70)
     print(f"Results saved to: {output_dir}/")
-    
+
     return all_results
 
 

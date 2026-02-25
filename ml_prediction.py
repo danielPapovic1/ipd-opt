@@ -36,6 +36,8 @@ class MLResult:
     feature_importance: Dict[str, float]
     train_size: int
     test_size: int
+    val_size: int
+    val_accuracy: float
 
 
 def extract_features(strategy: Strategy) -> Dict[str, float]:
@@ -96,7 +98,9 @@ def generate_training_data(
     opponent_strategies: List[Strategy],
     num_rounds: int = 100,
     memory_depth: int = 1,
-    good_threshold_percentile: float = 80
+    good_threshold_percentile: float = 80,
+    deduplicate: bool = True,
+    max_attempt_factor: int = 10
 ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     """
     Generate training data for ML models.
@@ -106,8 +110,30 @@ def generate_training_data(
         y: Labels (1=good, 0=bad)
         feature_names: List of feature names
     """
-    # Generate random strategies
-    strategies = [generate_random_strategy(memory_depth) for _ in range(n_samples)]
+    # Generate random strategies (optionally unique by exact bitstring)
+    strategy_length = 5 if memory_depth == 1 else 1 + (4 ** memory_depth)
+    max_unique = 2 ** strategy_length if strategy_length <= 20 else None
+
+    if deduplicate and max_unique is not None and n_samples > max_unique:
+        deduplicate = False
+
+    if deduplicate:
+        strategies = []
+        seen = set()
+        max_attempts = max_attempt_factor * n_samples
+        attempts = 0
+        while len(strategies) < n_samples and attempts < max_attempts:
+            candidate = generate_random_strategy(memory_depth)
+            attempts += 1
+            if candidate.bitstring in seen:
+                continue
+            seen.add(candidate.bitstring)
+            strategies.append(candidate)
+        if len(strategies) < n_samples:
+            deduplicate = False
+
+    if not deduplicate:
+        strategies = [generate_random_strategy(memory_depth) for _ in range(n_samples)]
     
     # Evaluate fitness
     evaluator = FitnessEvaluator(opponent_strategies, num_rounds)
@@ -143,19 +169,24 @@ class StrategyPredictor:
               X: np.ndarray, 
               y: np.ndarray,
               feature_names: List[str],
-              test_size: float = 0.2) -> List[MLResult]:
+              test_size: float = 0.2,
+              val_size: float = 0.2) -> List[MLResult]:
         """
         Train multiple ML models and return results.
         """
         self.feature_names = feature_names
         
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42
+        # Split data: train / validation / test
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42, stratify=y
         )
-        
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_trainval, y_trainval, test_size=val_size, random_state=42, stratify=y_trainval
+        )
+
         # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)
+        X_val_scaled = self.scaler.transform(X_val)
         X_test_scaled = self.scaler.transform(X_test)
         
         # Define models
@@ -174,12 +205,15 @@ class StrategyPredictor:
             # Train
             if name in ['SVM', 'LogisticRegression', 'NeuralNetwork']:
                 model.fit(X_train_scaled, y_train)
+                y_val_pred = model.predict(X_val_scaled)
                 y_pred = model.predict(X_test_scaled)
             else:
                 model.fit(X_train, y_train)
+                y_val_pred = model.predict(X_val)
                 y_pred = model.predict(X_test)
             
             # Evaluate
+            val_accuracy = accuracy_score(y_val, y_val_pred)
             accuracy = accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred, zero_division=0)
             recall = recall_score(y_test, y_pred, zero_division=0)
@@ -201,7 +235,9 @@ class StrategyPredictor:
                 f1=f1,
                 feature_importance=importance,
                 train_size=len(X_train),
-                test_size=len(X_test)
+                test_size=len(X_test),
+                val_size=len(X_val),
+                val_accuracy=val_accuracy
             )
             
             results.append(result)

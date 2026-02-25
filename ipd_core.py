@@ -105,11 +105,11 @@ class IPDGame:
                 # Update results
                 results[strategies[i].name]['total_score'] += score_i
                 results[strategies[i].name]['matches'] += 1
-                results[strategies[i].name]['scores'].append(score_j)
+                results[strategies[i].name]['scores'].append(score_i)
                 
                 results[strategies[j].name]['total_score'] += score_j
                 results[strategies[j].name]['matches'] += 1
-                results[strategies[j].name]['scores'].append(score_i)
+                results[strategies[j].name]['scores'].append(score_j)
         
         # Calculate average scores
         for name in results:
@@ -210,33 +210,41 @@ REFERENCE_STRATEGIES = [TFT, TF2T, STFT, ALLD, ALLC, RAND, GRIM, PAVLOV]
 def create_strategy_from_bitstring(bitstring: str, memory_depth: int = 1) -> Strategy:
     """
     Create a strategy from a bitstring representation.
-    
+
     For memory_depth=1: bitstring has 5 bits
         - bit 0: initial move (0=C, 1=D)
         - bits 1-4: response to (C,C), (C,D), (D,C), (D,D)
-    
-    For memory_depth=n: bitstring has 1 + 2^(2n) bits
+
+    For memory_depth=n: bitstring has 1 + 4^n bits
+        - bit 0: initial move
+        - bits 1..4^n: responses to base-4 encoded history windows
     """
+    if memory_depth < 1:
+        raise ValueError("memory_depth must be >= 1 for bitstring strategies")
+
+    expected_length = 5 if memory_depth == 1 else 1 + (4 ** memory_depth)
+    if len(bitstring) != expected_length:
+        raise ValueError(
+            f"Invalid bitstring length {len(bitstring)} for memory_depth={memory_depth}; "
+            f"expected {expected_length}"
+        )
+
     def bitstring_strategy(history: List[Tuple[Move, Move]]) -> Move:
         if not history:
-            # First move
             return Move.DEFECT if bitstring[0] == '1' else Move.COOPERATE
-        
-        # Encode last 'memory_depth' rounds as index
+
         if memory_depth == 1:
             last_round = history[-1]
-            # Encode: (my_move, opp_move) -> 0, 1, 2, 3
             idx = (last_round[0].value * 2 + last_round[1].value) + 1
         else:
-            # For deeper memory, encode all rounds
-            idx = 1
-            for i in range(max(0, len(history) - memory_depth), len(history)):
-                round_moves = history[i]
-                idx = idx * 4 + (round_moves[0].value * 2 + round_moves[1].value)
-            idx = min(idx, len(bitstring) - 1)
-        
+            recent = history[-memory_depth:]
+            idx = 0
+            for my_move, opp_move in recent:
+                idx = idx * 4 + (my_move.value * 2 + opp_move.value)
+            idx += 1
+
         return Move.DEFECT if bitstring[idx] == '1' else Move.COOPERATE
-    
+
     return Strategy(
         name=f"Bitstring_{bitstring[:10]}...",
         play_func=bitstring_strategy,

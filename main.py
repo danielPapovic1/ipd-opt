@@ -26,7 +26,7 @@ from ml_prediction import (
     generate_training_data, StrategyPredictor,
     extract_features, analyze_patterns
 )
-from experiments import ExperimentRunner, run_full_experiment_suite
+from experiments import ExperimentRunner, run_full_experiment_suite, FULL_SUITE_PROFILES
 from analysis import (
     analyze_strategy_properties, compare_to_tft,
     run_extended_tournament, extract_winning_patterns,
@@ -161,7 +161,7 @@ def run_quick_demo():
     print("\nRun 'python main.py --full' for complete experiments.")
 
 
-def run_full_experiments():
+def run_full_experiments(profile: str = "fast", seed: int = 42):
     """Run the complete experiment suite"""
     output_dir = "results"
     os.makedirs(output_dir, exist_ok=True)
@@ -169,7 +169,8 @@ def run_full_experiments():
     print_header("RUNNING FULL EXPERIMENT SUITE")
     print(f"Output directory: {output_dir}")
     
-    results = run_full_experiment_suite(output_dir)
+    print(f"Using full-suite profile: {profile} (available: {list(FULL_SUITE_PROFILES)})")
+    results = run_full_experiment_suite(output_dir, profile=profile, base_seed=seed)
     
     print_header("GENERATING COMPREHENSIVE REPORT")
     generate_comprehensive_report(output_dir)
@@ -371,13 +372,17 @@ def main():
                        help='Run quick demonstration')
     parser.add_argument('--full', action='store_true',
                        help='Run full experiment suite')
+    parser.add_argument('--full-profile', choices=['fast', 'balanced', 'full'], default='fast',
+                       help='Runtime profile for --full (default: fast)')
+    parser.add_argument('--seed', type=int, default=42,
+                       help='Base random seed for reproducible experiment runs')
     parser.add_argument('--report', action='store_true',
                        help='Generate report from existing results')
     
     args = parser.parse_args()
     
     if args.full:
-        run_full_experiments()
+        run_full_experiments(profile=args.full_profile, seed=args.seed)
     elif args.report:
         results_dir = "results"
         generate_comprehensive_report(results_dir)
