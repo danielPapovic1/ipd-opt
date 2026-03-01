@@ -1,0 +1,34 @@
+[
+  {
+    "strategy": "Bitstring_00101...",
+    "bitstring": "00101",
+    "is_zd": true,
+    "chi": 0.9767443536155234,
+    "phi": 0.06680188927358097,
+    "classification": "Generous"
+  },
+  {
+    "strategy": "Bitstring_00101...",
+    "bitstring": "00101",
+    "is_zd": true,
+    "chi": 0.9773896331467984,
+    "phi": 0.06481085014979344,
+    "classification": "Generous"
+  },
+  {
+    "strategy": "Bitstring_00101...",
+    "bitstring": "00101",
+    "is_zd": true,
+    "chi": 0.9775186816589037,
+    "phi": 0.06442041120758799,
+    "classification": "Generous"
+  },
+  {
+    "strategy": "Bitstring_00101...",
+    "bitstring": "00101",
+    "is_zd": true,
+    "chi": 0.9779252512911648,
+    "phi": 0.06320285166879577,
+    "classification": "Generous"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "timestamp_utc": "2026-02-28T02:45:54Z",
+  "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "numpy_version": "2.4.2",
+  "scipy_version": "1.17.1",
+  "sklearn_version": "1.8.0",
+  "cpu_count": 16,
+  "base_seed": 42,
+  "seed_policy": "base_seed + run index; method offsets x100 + [1..4]",
+  "total_runtime_hours": 0.0021208260456720986
+}

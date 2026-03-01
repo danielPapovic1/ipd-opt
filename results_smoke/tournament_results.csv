@@ -1,0 +1,10 @@
+strategy,avg_score,total_score,matches,type
+TF2T,538.4,5384,10,Reference
+TFT,536.6,5366,10,Reference
+EvolvedChampion_GA_00101,534.8,5348,10,Evolved
+GRIM,520.1,5201,10,Reference
+PAVLOV,515.6,5156,10,Reference
+ALL-C,510.0,5100,10,Reference
+RAND,434.9,4349,10,Reference
+STFT,387.0,3870,10,Reference
+ALL-D,364.4,3644,10,Reference
