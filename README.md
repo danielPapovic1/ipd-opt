@@ -1,169 +1,81 @@
-# Iterated Prisoner's Dilemma - Optimization Project
+# Iterated Prisoner's Dilemma Optimization Project
 
-## Overview
+## Project Overview
 
-This project implements a comprehensive study of the Iterated Prisoner's Dilemma (IPD) using various optimization methods and machine learning techniques to discover effective strategies.
+This repository studies strategy optimization in the Iterated Prisoner’s Dilemma (IPD) using four optimization methods (GA, EDA, Hill Climbing, Tabu Search), benchmark strategy tournaments, and ML-based strategy-success prediction.
 
-## Project Structure
+The implementation aligns with the specification baseline in the provided blueprint:
+- Standard payoff matrix is implemented as **R=3, S=0, T=5, P=1**.
+- Iterated simulation supports configurable round counts (with defaults used at 100 and 200 in experiments/evaluation paths).
+- Baseline strategy set includes TFT, TF2T, STFT, ALL-D, ALL-C, RAND (plus GRIM and PAVLOV).
+- GA includes roulette-wheel selection, single-point crossover, and bit-flip mutation.
+- Strategy encoding follows **1 + 4^n** bits for memory depth `n`.
+- The experiment suite compares GA, EDA, Hill Climbing, and Tabu Search.
+- ML integration trains 5 classifiers over extracted strategy features.
 
-```
+## Directory Map
+
+```txt
 ipd_project/
-├── ipd_core.py          # Core game engine and reference strategies
-├── optimization.py      # Optimization algorithms (GA, EDA, HC, TS)
-├── ml_prediction.py     # Machine learning for strategy prediction
-├── experiments.py       # Experiment runner and parameter tuning
-├── analysis.py          # Strategy analysis and pattern extraction
-├── main.py              # Main entry point
-├── results/             # Generated results and visualizations
-└── README.md            # This file
+├── main.py                 # Primary CLI entry point
+├── ipd_core.py             # Game engine, payoff matrix, baseline strategies
+├── optimization.py         # GA, EDA, Hill Climbing, Tabu Search logic
+├── ml_prediction.py        # ML feature extraction, training, and prediction
+├── experiments.py          # Orchestration of comparative experiments
+├── analysis.py             # Statistical tests, Pareto frontier, pattern extraction
+├── zd_analysis.py          # Zero-Determinant strategy verification
+├── requirements.txt        # Python dependencies
+└── results/                # Output artifacts (CSVs, PNGs, JSONs, Reports)
 ```
 
-## Components
+## System Flow (Text Diagram)
 
-### 1. IPD Core (`ipd_core.py`)
-- Game engine with standard payoff matrix (R=3, S=0, T=5, P=1)
-- Strategy representation as bitstrings
-- Tournament system for evaluating strategies
-- Reference strategies:
-  - **TFT** (Tit-for-Tat): Cooperate first, then copy opponent
-  - **TF2T** (Tit-for-Two-Tats): More forgiving variant
-  - **STFT** (Suspicious TFT): Defect first, then copy
-  - **ALL-D**: Always defect
-  - **ALL-C**: Always cooperate
-  - **GRIM**: Cooperate until defection, then always defect
-  - **PAVLOV**: Win-stay, lose-shift
+1. **Inputs**: CLI flags in `main.py` (e.g., `--demo`, `--full`, `--report`) trigger the run mode.
+2. **Simulation** (`ipd_core.py`): `IPDGame.play_match()` simulates repeated interactions using `PAYOFF_MATRIX`.
+3. **Scoring** (`optimization.py`): `FitnessEvaluator.evaluate()` computes fitness and reuses cached match/fitness values.
+4. **Optimization** (`optimization.py`): GA/EDA/HC/TS evolve candidate strategies and return `OptimizationResult`.
+5. **Machine Learning** (`ml_prediction.py`): training data is generated from simulated strategy fitness, feature vectors are extracted, then multiple classifiers are trained.
+6. **Analysis and Outputs** (`experiments.py`, `analysis.py`, `main.py`, `zd_analysis.py`): dataframes, plots, ANOVA/effect-size outputs, Pareto frontier outputs, ZD diagnostics, and report files are produced under `results/`.
 
-### 2. Optimization Methods (`optimization.py`)
-- **Genetic Algorithm (GA)**: Population-based evolution
-- **Estimation of Distribution Algorithm (EDA)**: Probability-based sampling
-- **Hill Climbing**: Local search with random restarts
-- **Tabu Search**: Local search with memory
+## Quick Start
 
-### 3. Machine Learning (`ml_prediction.py`)
-- Feature extraction from strategy bitstrings
-- Models: Random Forest, Logistic Regression, SVM, Neural Network, Gradient Boosting
-- Strategy success prediction
-- Pattern analysis
+Install dependencies:
 
-### 4. Experiments (`experiments.py`)
-- Parameter tuning for optimization methods
-- Memory depth comparison
-- Method comparison across multiple runs
-- Evolved vs reference strategy tournaments
-- ML training set size experiments
+```bash
+pip install -r requirements.txt
+```
 
-### 5. Analysis (`analysis.py`)
-- Strategy property analysis (nice, provokable, forgiving)
-- TFT comparison
-- Extended tournament results
-- Winning pattern extraction
-- Strategy evolution analysis
+### 1) Run the Quick Demonstration
+Provides a fast, low-generation run to prove the environment works without taking hours.
 
-## Usage
-
-### Quick Demo
 ```bash
 python main.py --demo
 ```
 
-### Full Experiment Suite
+**Expected Output:** Prints a sample Payoff Matrix, quick match results, a small tournament ranking, short optimization run outputs (Best fitness, bits), and a fast ML training loop output to the console.
+
+### 2) Run the Full Experiment Suite
+Executes the comprehensive pipeline (GA tuning, memory depth tests, method comparisons, ML scale tests).
+
 ```bash
 python main.py --full
 ```
 
-### Generate Report from Existing Results
+**Expected Output:** Generates all CSV files, JSON metadata, and PNG plots in the results/ directory, concluding with the generation of comprehensive_report.txt.
+
+### 3) Generate Report Only (From Existing Results)
+If results are already in the results/ folder, this skips simulation and re-compiles the final text report.
+
 ```bash
 python main.py --report
 ```
 
-### Run Individual Components
-```python
-# Import modules
-from ipd_core import *
-from optimization import *
-from ml_prediction import *
+**Expected Output:** Rewrites results/comprehensive_report.txt based on the CSVs present.
 
-# Create game and run tournament
-game = IPDGame()
-strategies = [TFT, ALLD, ALLC, TF2T]
-results = game.round_robin_tournament(strategies, num_rounds=100)
+## Engineering Strengths
 
-# Evolve a strategy using GA
-ga = GeneticAlgorithm(population_size=100, mutation_rate=0.01)
-result = ga.evolve([TFT, ALLD, ALLC], generations=1000)
-print(f"Best strategy: {result.best_strategy.bitstring}")
-print(f"Best fitness: {result.best_fitness}")
-
-# Train ML predictor
-X, y, feature_names, strategies, fitnesses = generate_training_data(
-    n_samples=1000, opponent_strategies=[TFT, ALLD, ALLC]
-)
-predictor = StrategyPredictor()
-ml_results = predictor.train(X, y, feature_names)
-```
-
-## Key Results
-
-### Optimization Performance
-- All methods successfully evolved strategies achieving fitness ~266 against [TFT, ALLD, ALLC]
-- GA and EDA showed consistent performance
-- Hill Climbing and Tabu Search found good solutions faster
-
-### Tournament Results (Evolved vs Reference)
-| Rank | Strategy | Avg Score | Type |
-|------|----------|-----------|------|
-| 1 | GRIM | 328.08 | Reference |
-| 2 | ALL-D | 284.31 | Reference |
-| 3 | TF2T | 274.00 | Reference |
-| 4 | TFT | 273.54 | Reference |
-| 5-8 | Evolved strategies | 256-257 | Evolved |
-
-### Machine Learning Results
-- Random Forest, SVM, Neural Network, Gradient Boosting: 100% accuracy
-- Logistic Regression: 78-82% accuracy
-- Key features: initial cooperation, response to defection
-
-### Memory Depth Impact
-- Memory depth 1: Best fitness = 266
-- Memory depth 2: Best fitness = 235
-- Conclusion: Deeper memory provides diminishing returns
-
-## Implementation Details
-
-### Strategy Encoding (Memory Depth 1)
-```
-Bit 0: Initial move (0=Cooperate, 1=Defect)
-Bit 1: Response to (C,C)
-Bit 2: Response to (C,D)
-Bit 3: Response to (D,C)
-Bit 4: Response to (D,D)
-
-Example: "00101" = TFT
-  - Initial: Cooperate (0)
-  - After (C,C): Cooperate (0)
-  - After (C,D): Defect (1)
-  - After (D,C): Cooperate (0)
-  - After (D,D): Defect (1)
-```
-
-### Payoff Matrix
-```
-               Opponent
-              C      D
-         C  (3,3)  (0,5)
-Player   D  (5,0)  (1,1)
-```
-
-## Requirements
-
-```
-numpy
-pandas
-matplotlib
-seaborn
-scikit-learn
-```
-
-## Author
-
-Generated for IPD Optimization Assignment
+- **Modular architecture:** game engine (`ipd_core.py`) is separated from search logic (`optimization.py`).
+- **High-performance evaluation:** shared LRU-like caches for match-level and fitness-level reuse in `FitnessEvaluator`.
+- **Statistical rigor:** ANOVA and Cohen’s d are included in `analysis.py`.
+- **ZD diagnostics:** evolved strategies can be categorized as Non-ZD / Extortionate / Generous.
+- **Reproducibility controls:** seeded run policies and metadata logging are included in `experiments.py` and `main.py`.
